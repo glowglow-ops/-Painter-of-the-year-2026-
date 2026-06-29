@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>화우회 동문미전 인기투표</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FAF9F7;--surface:#FFFFFF;--ink:#1A1814;--ink-mid:#5C5852;--ink-light:#9B9590;
+  --accent:#8B4E2C;--accent-light:#C4824A;
+  --selected-border:#8B4E2C;--selected-bg:rgba(139,78,44,0.06);
+  --check-bg:#8B4E2C;--bar-bg:rgba(250,249,247,0.95);--bar-border:rgba(26,24,20,0.08);
+  --btn-active:#1A1814;--btn-disabled:#C8C4BE;--btn-text:#FAF9F7;
+  --modal-bg:rgba(26,24,20,0.6);
+  --radius-card:10px;--radius-btn:8px;
+  --shadow-card:0 2px 8px rgba(0,0,0,0.08);
+  --shadow-card-sel:0 4px 16px rgba(139,78,44,0.20);
+  --font-display:Georgia,"Times New Roman",serif;
+  --font-body:-apple-system,"Noto Sans KR",sans-serif;
+  --bottom-bar-h:72px;
+}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--font-body);-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+#app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+.page-header{padding:20px 20px 14px;border-bottom:1px solid var(--bar-border);background:var(--surface);position:sticky;top:0;z-index:100}
+.page-header h1{font-family:var(--font-display);font-size:20px;font-weight:normal;letter-spacing:.04em;color:var(--ink);margin-bottom:4px}
+.page-header .sub-title{font-size:11px;color:var(--ink-light);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.page-header .guide{font-size:13px;color:var(--ink-mid);line-height:1.5}
+.page-header .guide strong{color:var(--accent);font-weight:600}
+.scroll-area{flex:1;overflow-y:auto;padding:0 16px calc(var(--bottom-bar-h) + 32px + env(safe-area-inset-bottom))}
+.section{margin-top:28px}
+.section-header{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;padding:0 4px}
+.section-title{font-family:var(--font-display);font-size:17px;font-weight:normal;color:var(--ink);letter-spacing:.02em}
+.section-count{font-size:12px;color:var(--ink-light);letter-spacing:.06em}
+.section-divider{height:1px;background:linear-gradient(to right,var(--bar-border),transparent);margin-bottom:14px;margin-left:4px}
+.artwork-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:1024px){.artwork-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.artwork-grid{grid-template-columns:repeat(2,1fr);gap:10px}}
+.card{background:var(--surface);border-radius:var(--radius-card);overflow:hidden;cursor:pointer;border:2px solid transparent;box-shadow:var(--shadow-card);transition:border-color .18s,box-shadow .18s,transform .12s;position:relative;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.card:active{transform:scale(0.97)}
+.card.selected{border-color:var(--selected-border);background:var(--selected-bg);box-shadow:var(--shadow-card-sel)}
+.card-img-wrap{width:100%;aspect-ratio:3/4;overflow:hidden;background:#EDE8E0;position:relative}
+.card-img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.check-overlay{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:var(--check-bg);display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0.5);transition:opacity .15s,transform .15s}
+.card.selected .check-overlay{opacity:1;transform:scale(1)}
+.check-overlay svg{width:16px;height:16px}
+.select-num{position:absolute;top:8px;left:8px;width:22px;height:22px;border-radius:50%;background:var(--check-bg);color:#fff;font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center}
+.card.selected .select-num{display:flex}
+.card-info{padding:10px 10px 12px}
+.card-artist{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-major{font-size:11px;color:var(--ink-light);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-title{font-size:12px;color:var(--ink-mid);font-style:italic;line-height:1.35;min-height:1.35em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;height:calc(var(--bottom-bar-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--bar-bg);border-top:1px solid var(--bar-border);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:space-between;padding-left:20px;padding-right:20px;gap:16px;z-index:200}
+.bar-counts{display:flex;gap:20px;flex-shrink:0}
+.bar-count-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.bar-count-label{font-size:10px;color:var(--ink-light);letter-spacing:.06em}
+.bar-count-val{font-size:17px;font-weight:700;color:var(--ink);line-height:1}
+.bar-count-val.complete{color:var(--accent)}
+.vote-btn{flex:1;max-width:220px;height:44px;border-radius:var(--radius-btn);border:none;background:var(--btn-active);color:var(--btn-text);font-size:15px;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:background .15s,opacity .15s;touch-action:manipulation}
+.vote-btn:disabled{background:var(--btn-disabled);cursor:not-allowed;opacity:.7}
+.vote-btn:not(:disabled):active{opacity:.8}
+.modal-backdrop{position:fixed;inset:0;background:var(--modal-bg);display:flex;align-items:center;justify-content:center;z-index:500;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.modal-backdrop.open{opacity:1;pointer-events:auto}
+.modal-box{background:var(--surface);border-radius:16px;padding:28px 24px 20px;max-width:400px;width:100%;transform:translateY(20px) scale(.97);transition:transform .2s}
+.modal-backdrop.open .modal-box{transform:translateY(0) scale(1)}
+.modal-title{font-family:var(--font-display);font-size:18px;color:var(--ink);margin-bottom:8px;text-align:center}
+.modal-sub{font-size:13px;color:var(--ink-mid);text-align:center;margin-bottom:4px}
+.modal-preview{margin:16px 0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-preview-col h4{font-size:10px;letter-spacing:.08em;color:var(--ink-light);text-transform:uppercase;margin-bottom:6px}
+.modal-preview-col ul{list-style:none;display:flex;flex-direction:column;gap:4px}
+.modal-preview-col ul li{font-size:12px;color:var(--ink-mid);padding:5px 0;border-bottom:1px solid var(--bar-border)}
+.li-artist{font-weight:600;color:var(--ink)}
+.li-title{font-style:italic;color:var(--ink-light)}
+.modal-divider{height:1px;background:var(--bar-border);margin:16px 0}
+.modal-actions{display:flex;gap:10px}
+.btn-cancel{flex:1;height:44px;border-radius:var(--radius-btn);border:1.5px solid var(--bar-border);background:transparent;color:var(--ink-mid);font-size:14px;font-weight:500;cursor:pointer;touch-action:manipulation}
+.btn-cancel:active{opacity:.7}
+.btn-submit{flex:2;height:44px;border-radius:var(--radius-btn);border:none;background:var(--btn-active);color:var(--btn-text);font-size:14px;font-weight:600;cursor:pointer;touch-action:manipulation}
+.btn-submit:active{opacity:.8}
+.btn-submit:disabled{background:var(--btn-disabled);cursor:not-allowed}
+.success-screen{position:fixed;inset:0;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:600;opacity:0;pointer-events:none;transition:opacity .3s;gap:12px}
+.success-screen.show{opacity:1;pointer-events:auto}
+.success-icon{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-light));display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.success-icon svg{width:36px;height:36px}
+.success-title{font-family:var(--font-display);font-size:26px;color:var(--ink)}
+.success-sub{font-size:14px;color:var(--ink-light)}
+.success-countdown{font-size:12px;color:var(--ink-light);margin-top:4px}
+.toast{position:fixed;bottom:calc(var(--bottom-bar-h) + 16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:#C0392B;color:#fff;font-size:13px;padding:10px 20px;border-radius:20px;z-index:400;opacity:0;transition:opacity .2s,transform .2s;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="app">
+<header class="page-header">
+  <p class="sub-title">화우회 제26회 동문미전</p>
+  <h1>인기투표</h1>
+  <p class="guide"><strong>졸업생 작품 3점</strong>, <strong>재학생 작품 3점</strong>을 선택해 주세요. 선택한 작품을 다시 누르면 선택이 해제됩니다.</p>
+</header>
+<main class="scroll-area">
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">졸업생 작품</h2>
+      <span class="section-count" id="count-graduate-section">0 / 3 선택</span>
+    </div>
+    <div class="section-divider"></div>
+    <div class="artwork-grid" id="grid-graduate"></div>
+  </section>
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">재학생 작품</h2>
+      <span class="section-count" id="count-undergraduate-section">0 / 3 선택</span>
+    </div>
+    <div class="section-divider"></div>
+    <div class="artwork-grid" id="grid-undergraduate"></div>
+  </section>
+</main>
+<div class="bottom-bar">
+  <div class="bar-counts">
+    <div class="bar-count-item">
+      <span class="bar-count-label">졸업생</span>
+      <span class="bar-count-val" id="bar-grad-count">0 / 3</span>
+    </div>
+    <div class="bar-count-item">
+      <span class="bar-count-label">재학생</span>
+      <span class="bar-count-val" id="bar-under-count">0 / 3</span>
+    </div>
+  </div>
+  <button class="vote-btn" id="vote-btn" disabled aria-disabled="true">투표하기</button>
+</div>
+</div>
+<div class="modal-backdrop" id="modal" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <h3 class="modal-title">선택한 작품으로<br>투표를 제출하시겠습니까?</h3>
+    <p class="modal-sub">제출 후에는 수정할 수 없습니다.</p>
+    <div class="modal-preview">
+      <div class="modal-preview-col"><h4>졸업생</h4><ul id="modal-grad-list"></ul></div>
+      <div class="modal-preview-col"><h4>재학생</h4><ul id="modal-under-list"></ul></div>
+    </div>
+    <div class="modal-divider"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btn-cancel">취소</button>
+      <button class="btn-submit" id="btn-submit">제출</button>
+    </div>
+  </div>
+</div>
+<div class="success-screen" id="success-screen">
+  <div class="success-icon">
+    <svg viewBox="0 0 36 36" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="7,18 15,26 29,10"/>
+    </svg>
+  </div>
+  <p class="success-title">투표가 완료되었습니다</p>
+  <p class="success-sub">참여해주셔서 감사합니다</p>
+  <p class="success-countdown" id="success-countdown"></p>
+</div>
+<div class="toast" id="toast" role="alert"></div>
+<script>
+// ============================================================
+// ★ GAS URL — Google Apps Script 배포 후 여기에 붙여넣기
+// ============================================================
+const GAS_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
+
+// ============================================================
+// 작품 데이터 — 이미지는 images/ 폴더의 ID.png 파일 참조
+// ============================================================
+const artworks = [
+  {id:"G01",category:"graduate",artist:"이재우",majorYear:"건축공학과",title:"STELLA"},
+  {id:"G02",category:"graduate",artist:"조영선",majorYear:"건축공학과",title:"사랑네컷"},
+  {id:"G03",category:"graduate",artist:"황희원",majorYear:"독어독문학과",title:"인생"},
+  {id:"G04",category:"graduate",artist:"김형수",majorYear:"건축공학과",title:"그녀에게 꽃다발을"},
+  {id:"G05",category:"graduate",artist:"박재현",majorYear:"불어불문학과",title:"Yearning"},
+  {id:"G06",category:"graduate",artist:"박정서",majorYear:"기계공학과",title:"귤과 황동 접시 외"},
+  {id:"G07",category:"graduate",artist:"김동희",majorYear:"기악과",title:"Bamboo forest series"},
+  {id:"G08",category:"graduate",artist:"전창빈",majorYear:"기계공학과",title:"낯선 도시의 아침"},
+  {id:"G09",category:"graduate",artist:"윤현필",majorYear:"경영학과",title:"에르메스 강도"},
+  {id:"G10",category:"graduate",artist:"문기태",majorYear:"의학과",title:"Life is mist"},
+  {id:"G11",category:"graduate",artist:"이준택",majorYear:"건축공학과",title:"올려보다·비춰보다·내려보다"},
+  {id:"G12",category:"graduate",artist:"진연정",majorYear:"영어영문학과",title:"이화동 그 골목 1~4"},
+  {id:"G13",category:"graduate",artist:"김지언",majorYear:"생화학과",title:"한입 가득 달콤 추억"},
+  {id:"G14",category:"graduate",artist:"윤현정",majorYear:"영어영문학과 16학번",title:"燃業方·清永御前"},
+  {id:"G15",category:"graduate",artist:"황혜원",majorYear:"경영학과 18학번",title:"Froze"},
+  {id:"G16",category:"graduate",artist:"한성우",majorYear:"도시공학과 19학번",title:"세상에 하나뿐인"},
+  {id:"G17",category:"graduate",artist:"송하윤",majorYear:"경제학과 21학번",title:"거인의 흔적"},
+  {id:"G18",category:"graduate",artist:"이예준",majorYear:"계량위험관리 19학번",title:"Daughter"},
+  {id:"G19",category:"graduate",artist:"박승현",majorYear:"생활디자인학과 20학번",title:"금붕어 뽀뽀"},
+  {id:"U01",category:"undergraduate",artist:"성예원",majorYear:"경제학 21학번",title:"향수"},
+  {id:"U02",category:"undergraduate",artist:"유지원",majorYear:"식품영양학과 24학번",title:"花信; 꽃이 전하는 마음"},
+  {id:"U03",category:"undergraduate",artist:"이유정",majorYear:"경영학과 24학번",title:"사랑의 형태: 結"},
+  {id:"U04",category:"undergraduate",artist:"최유진",majorYear:"건축환경공학과 19학번",title:"피어나리라"},
+  {id:"U05",category:"undergraduate",artist:"김민성",majorYear:"체육교육학과 23학번",title:"질서의 틈새"},
+  {id:"U06",category:"undergraduate",artist:"이영우",majorYear:"IT융합공학 23학번",title:"빨간"},
+  {id:"U07",category:"undergraduate",artist:"이재은",majorYear:"독어독문학과 23학번",title:"다복"},
+  {id:"U08",category:"undergraduate",artist:"이정빈",majorYear:"경제학 24학번",title:"으아악!"},
+  {id:"U09",category:"undergraduate",artist:"장서영",majorYear:"의학과 20학번",title:"봄의 시작"},
+  {id:"U10",category:"undergraduate",artist:"조은세",majorYear:"융합인문사회과학 19학번",title:"해월야(海月夜)"},
+  {id:"U11",category:"undergraduate",artist:"최유진",majorYear:"의학과 20학번",title:"일탈"},
+  {id:"U12",category:"undergraduate",artist:"이건오",majorYear:"경영학과 25학번",title:"靈"},
+  {id:"U13",category:"undergraduate",artist:"박채연",majorYear:"경영학과 22학번",title:"초점"}
+];
+
+// ============================================================
+// STATE
+// ============================================================
+const MAX_SELECT = 3;
+const state = {
+  selected:{graduate:new Set(),undergraduate:new Set()},
+  selectOrder:{graduate:{},undergraduate:{}},
+  selectCounter:{graduate:0,undergraduate:0}
+};
+
+// ============================================================
+// RENDER
+// ============================================================
+function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+function renderGrid(category){
+  const grid=document.getElementById('grid-'+category);
+  grid.innerHTML='';
+  artworks.filter(a=>a.category===category).forEach(art=>{
+    const card=document.createElement('div');
+    card.className='card';
+    card.dataset.id=art.id;
+    card.dataset.category=category;
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-pressed','false');
+    card.innerHTML=
+      '<div class="card-img-wrap">'+
+        '<img src="images/'+art.id+'.png" alt="'+escHtml(art.artist)+'" loading="lazy">'+
+        '<div class="check-overlay" aria-hidden="true">'+
+          '<svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,11.5 13,5"/></svg>'+
+        '</div>'+
+        '<div class="select-num" aria-hidden="true"></div>'+
+      '</div>'+
+      '<div class="card-info">'+
+        '<div class="card-artist">'+escHtml(art.artist)+'</div>'+
+        '<div class="card-major">'+escHtml(art.majorYear)+'</div>'+
+        '<div class="card-title">'+escHtml(art.title||'')+'</div>'+
+      '</div>';
+    card.addEventListener('click',()=>toggleSelect(art.id,category));
+    card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleSelect(art.id,category);}});
+    grid.appendChild(card);
+  });
+}
+
+// ============================================================
+// SELECTION
+// ============================================================
+function toggleSelect(id,category){
+  const sel=state.selected[category];
+  const order=state.selectOrder[category];
+  if(sel.has(id)){
+    sel.delete(id);delete order[id];
+    let c=0;Array.from(sel).forEach(rid=>{order[rid]=++c;});
+    state.selectCounter[category]=c;
+  }else{
+    if(sel.size>=MAX_SELECT){showToast('한 카테고리에서 최대 '+MAX_SELECT+'개만 선택할 수 있습니다');return;}
+    sel.add(id);order[id]=++state.selectCounter[category];
+  }
+  const card=document.querySelector('.card[data-id="'+id+'"]');
+  if(card){const s=sel.has(id);card.classList.toggle('selected',s);card.setAttribute('aria-pressed',s?'true':'false');}
+  document.querySelectorAll('.card[data-category="'+category+'"]').forEach(c=>{
+    const b=c.querySelector('.select-num');if(b)b.textContent=order[c.dataset.id]||'';
+  });
+  updateCounters();
+}
+
+// ============================================================
+// COUNTERS
+// ============================================================
+function updateCounters(){
+  const gc=state.selected.graduate.size,uc=state.selected.undergraduate.size;
+  document.getElementById('bar-grad-count').textContent=gc+' / 3';
+  document.getElementById('bar-under-count').textContent=uc+' / 3';
+  document.getElementById('bar-grad-count').className='bar-count-val'+(gc===3?' complete':'');
+  document.getElementById('bar-under-count').className='bar-count-val'+(uc===3?' complete':'');
+  document.getElementById('count-graduate-section').textContent=gc+' / 3 선택';
+  document.getElementById('count-undergraduate-section').textContent=uc+' / 3 선택';
+  const ready=gc===3&&uc===3;
+  const btn=document.getElementById('vote-btn');
+  btn.disabled=!ready;btn.setAttribute('aria-disabled',ready?'false':'true');
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+document.getElementById('vote-btn').addEventListener('click',openModal);
+document.getElementById('btn-cancel').addEventListener('click',closeModal);
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+
+function openModal(){
+  ['graduate','undergraduate'].forEach((cat,i)=>{
+    const ul=document.getElementById(i===0?'modal-grad-list':'modal-under-list');
+    ul.innerHTML='';
+    const order=state.selectOrder[cat];
+    Array.from(state.selected[cat]).sort((a,b)=>order[a]-order[b]).forEach(id=>{
+      const art=artworks.find(a=>a.id===id);if(!art)return;
+      const li=document.createElement('li');
+      li.innerHTML='<span class="li-artist">'+escHtml(art.artist)+'</span><br><span class="li-title">'+escHtml(art.title||'')+'</span>';
+      ul.appendChild(li);
+    });
+  });
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('open');
+  const btn=document.getElementById('btn-submit');btn.disabled=false;btn.textContent='제출';
+}
+
+// ============================================================
+// SUBMIT
+// ============================================================
+document.getElementById('btn-submit').addEventListener('click',async function(){
+  const btn=this;btn.disabled=true;btn.textContent='제출 중…';
+  const payload={
+    graduate:Array.from(state.selected.graduate),
+    undergraduate:Array.from(state.selected.undergraduate),
+    timestamp:new Date().toISOString()
+  };
+  try{
+    await submitData(payload);
+    closeModal();showSuccess();
+  }catch(err){
+    btn.disabled=false;btn.textContent='제출';
+    showToast('전송 오류가 발생했습니다. 다시 시도해 주세요.');
+    console.error(err);
+  }
+});
+
+// ★ GAS 연동 함수 — URL만 바꾸면 됩니다
+async function submitData(payload){
+  await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  return true;
+}
+
+// ============================================================
+// SUCCESS & RESET
+// ============================================================
+function showSuccess(){
+  const screen=document.getElementById('success-screen');
+  screen.classList.add('show');
+  let sec=5;
+  const cd=document.getElementById('success-countdown');
+  cd.textContent=sec+'초 후 초기화됩니다';
+  const t=setInterval(()=>{
+    sec--;
+    cd.textContent=sec>0?sec+'초 후 초기화됩니다':'초기화 중…';
+    if(sec<=0){clearInterval(t);resetAll();}
+  },1000);
+}
+
+function resetAll(){
+  state.selected.graduate.clear();state.selected.undergraduate.clear();
+  state.selectOrder={graduate:{},undergraduate:{}};
+  state.selectCounter={graduate:0,undergraduate:0};
+  document.querySelectorAll('.card').forEach(c=>{
+    c.classList.remove('selected');c.setAttribute('aria-pressed','false');
+    const b=c.querySelector('.select-num');if(b)b.textContent='';
+  });
+  updateCounters();
+  document.getElementById('success-screen').classList.remove('show');
+  document.querySelector('.scroll-area').scrollTo({top:0,behavior:'smooth'});
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// INIT
+renderGrid('graduate');renderGrid('undergraduate');updateCounters();
+</script>
+</body>
+</html>
