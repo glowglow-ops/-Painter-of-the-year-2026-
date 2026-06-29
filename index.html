@@ -329,8 +329,13 @@ document.getElementById('btn-submit').addEventListener('click',async function(){
 });
 
 // ★ GAS 연동 함수 — URL만 바꾸면 됩니다
-async function submitData(payload){
-  await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+async function submitData(payload) {
+  const response = await fetch(GAS_URL, {
+    method: 'POST',
+    // no-cors 제거, mode 없이 보내야 응답 확인 가능
+    headers: { 'Content-Type': 'text/plain' }, // GAS는 text/plain으로 받아야 파싱됨
+    body: JSON.stringify(payload)
+  });
   return true;
 }
 
