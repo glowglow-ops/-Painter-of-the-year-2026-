@@ -40,7 +40,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--fo
 .card:active{transform:scale(0.97)}
 .card.selected{border-color:var(--selected-border);background:var(--selected-bg);box-shadow:var(--shadow-card-sel)}
 .card-img-wrap{width:100%;aspect-ratio:3/4;overflow:hidden;background:#EDE8E0;position:relative}
-.card-img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.card-img-wrap img{ width:100%; height:100%; object-fit:contain; object-position:center; display:block; }
 .check-overlay{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:var(--check-bg);display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0.5);transition:opacity .15s,transform .15s}
 .card.selected .check-overlay{opacity:1;transform:scale(1)}
 .check-overlay svg{width:16px;height:16px}
